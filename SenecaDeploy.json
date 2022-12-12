@@ -20,24 +20,6 @@
     "ODLID": {
       "type": "String"
     },
-    "firewallName": {
-      "type": "String"
-    },
-    "virtualNetworkName": {
-      "type": "String"
-    },
-    "firewallPublicIpAddressName": {
-      "type": "String",
-      "metadata": {
-        "description": "description"
-      }
-    },
-    "firewallPublicIpAddress": {
-      "type": "String"
-    },
-    "ingressControllerIpAddress": {
-      "type": "String"
-    },
     "dnsZonesName": {
       "type": "String"
     },
