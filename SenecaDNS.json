@@ -97,7 +97,7 @@
     {
       "type": "Microsoft.Network/dnsZones",
       "apiVersion": "2018-05-01",
-      "name": "[parameters('dnsZonesName')]",
+      "name": "[variables('dnsZonesName')]",
       "location": "[variables('location')]"
     }
   ],
