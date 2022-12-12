@@ -1,0 +1,120 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "DeploymentID": {
+      "type": "String"
+    },
+    "part1": {
+      "type": "String"
+    },
+    "part2": {
+      "type": "String"
+    },
+    "AzureUserName": {
+      "type": "string"
+    },
+    "AzurePassword": {
+      "type": "securestring"
+    },
+    "ODLID": {
+      "type": "string"
+    },
+    "dnsZonesName": {
+      "type": "String"
+    }
+  },
+  "variables": {
+    "addressPrefix": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/24')]",
+    "azureSubscriptionID": "[subscription().subscriptionId]",
+    "azureTenantID": "[subscription().tenantId]",
+    "Bastionvnetname": "Bastion-Vnet",
+    "location": "[resourceGroup().location]",
+    "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
+    "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
+    "bastionrgname": "Bastion_RG",
+    "virtualNetwork_Student_Vnet_name": "[concat('Student-',parameters('DeploymentID'),'-vnet')]",
+    "virtualNetworks_Bastion_vnet_externalid": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('bastionrgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('Bastionvnetname'))]",
+    "vnetId": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('rgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('virtualNetwork_Student_Vnet_name')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "Virtual-Desktop-Client",
+            "properties": {
+              "addressPrefix": "[variables('addressPrefix')]",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          }
+        ],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Virtual-Desktop-Client')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[variables('addressPrefix')]",
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2016-03-30",
+      "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Student-Bastion',parameters('DeploymentID'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[variables('virtualNetworks_Bastion_vnet_externalid')]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/dnsZones",
+      "apiVersion": "2018-05-01",
+      "name": "[parameters('dnsZonesName')]",
+      "location": "[variables('location')]"
+    }
+  ],
+  "outputs": {
+    "DeploymentID": {
+      "type": "String",
+      "value": "[ parameters('DeploymentID')]"
+    },
+    "Student Virtual Network": {
+      "type": "String",
+      "value": "[variables('virtualNetwork_Student_Vnet_name')]"
+    },
+    "Student VNET address space": {
+      "type": "String",
+      "value": "[variables('addressPrefix')]"
+    }
+  }
+}
