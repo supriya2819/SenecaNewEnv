@@ -13,6 +13,9 @@
     },
     "publicIpAddressName": {
       "type": "String"
+    },
+    "dnsZonesName": {
+      "type": "String"
     }
   },
   "variables": {
@@ -25,7 +28,6 @@
     "Firewallvnet": "FWVnet",
     "azureFirewallTier": "Basic",
     "azureFirewallName": "SenecaFW",
-    "dnsZonesName": "Senecatest.com",
     "managementPublicIpAddressName": "",
     "location": "[resourceGroup().location]",
     "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
@@ -191,7 +193,7 @@
     {
       "type": "Microsoft.Network/dnsZones",
       "apiVersion": "2018-05-01",
-      "name": "[variables('dnsZonesName')]",
+      "name": "[parameters('dnsZonesName')]",
       "location": "global"
     },
     {
