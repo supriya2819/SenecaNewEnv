@@ -30,7 +30,7 @@
     "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
     "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
     "bastionrgname": "Bastion_RG",
-    "dnsZonesName": "Seneca.com"
+    "dnsZonesName": "Seneca.com",
     "virtualNetwork_Student_Vnet_name": "[concat('Student-',parameters('DeploymentID'),'-vnet')]",
     "virtualNetworks_Bastion_vnet_externalid": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('bastionrgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('Bastionvnetname'))]",
     "vnetId": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('rgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]"
