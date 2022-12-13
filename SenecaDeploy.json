@@ -11,79 +11,29 @@
     "part2": {
       "type": "String"
     },
-    "AzureUserName": {
-      "type": "String"
-    },
-    "AzurePassword": {
-      "type": "Securestring"
-    },
-    "ODLID": {
-      "type": "String"
-    },
-    "dnsZonesName": {
-      "type": "String"
-    },
-    "azureFirewallName": {
-      "type": "string"
-    },
-    "resourceGroup": {
-      "type": "String"
-    },
-    "managementPublicIpAddressName": {
-      "type": "String"
-    },
     "publicIpAddressName": {
       "type": "String"
-    },
-    "zones": {
-      "type": "Array"
-    },
-    "azureFirewallTier": {
-      "type": "String"
-    },
-    "managementPublicIpZones": {
-      "type": "Array"
-    },
-    "publicIpZones": {
-      "type": "Array"
-    },
-    "webappname": {
-      "type": "string"
-    },
-    "hostingPlanName": {
-      "type": "string"
-    },
-    "currentStack": {
-      "type": "string"
-    },
-    "phpVersion": {
-      "type": "string"
-    },
-    "netFrameworkVersion": {
-      "type": "string"
-    },
-    "ftpsState": {
-      "type": "string"
-    },
-    "subscriptionId": {
-      "type": "string"
-    },
-    "alwaysOn": {
-      "type": "bool"
-    },
-    "serverFarmResourceGroup": {
-      "type": "string"
     }
   },
   "variables": {
     "addressPrefix": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/24')]",
+    "addressPrefix2": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/16')]",
+    "addressPrefix3": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/20')]",
     "azureSubscriptionID": "[subscription().subscriptionId]",
     "azureTenantID": "[subscription().tenantId]",
     "Bastionvnetname": "Bastion-Vnet",
+    "Firewallvnet": "FWVnet",
+    "azureFirewallTier": "Basic",
+    "azureFirewallName": "SenecaFW",
+    "dnsZonesName": "Senecatest.com",
+    "managementPublicIpAddressName": "",
     "location": "[resourceGroup().location]",
     "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
     "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
     "bastionrgname": "Bastion_RG",
+    "currentStack": "dotnet",
+    "hostingPlanName": "ASP-test-9a12",
+    "webappname": "SenecaWebApp",
     "virtualNetwork_Student_Vnet_name": "[concat('Student-',parameters('DeploymentID'),'-vnet')]",
     "virtualNetworks_Bastion_vnet_externalid": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('bastionrgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('Bastionvnetname'))]",
     "vnetId": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('rgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]"
@@ -113,13 +63,13 @@
           {
             "name": "AzureFirewallSubnet",
             "properties": {
-              "addressPrefix": "[variables('addressPrefix')]"
+              "addressPrefix": "[variables('addressPrefix2')]"
             }
           },
           {
             "name": "AzureFirewallManagementSubnet",
             "properties": {
-              "addressPrefix": "[variables('addressPrefix')]"
+              "addressPrefix": "[variables('addressPrefix3')]"
             }
           }
         ],
@@ -132,7 +82,6 @@
       "apiVersion": "2020-11-01",
       "name": "Seneca-pol",
       "location": "[variables('location')]",
-      "tags": {},
       "properties": {
         "sku": {
           "tier": "Basic"
@@ -142,45 +91,44 @@
     {
       "type": "Microsoft.Network/azureFirewalls",
       "apiVersion": "2020-05-01",
-      "name": "[parameters('azureFirewallName')]",
+      "name": "[variables('azureFirewallName')]",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('managementPublicIpAddressName'))]",
-        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]",
-        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks', variables('Bastionvnetname'))]",
-        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+        "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]",
+        "[resourceId('Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('Bastionvnetname'))]",
+        "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
       ],
-      "zones": "[parameters('zones')]",
       "properties": {
         "ipConfigurations": [
           {
             "name": "[parameters('publicIpAddressName')]",
             "properties": {
               "subnet": {
-                "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallSubnet')]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallSubnet')]"
               },
               "publicIpAddress": {
-                "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]"
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]"
               }
             }
           }
         ],
         "sku": {
-          "tier": "[parameters('azureFirewallTier')]"
+          "tier": "[variables('azureFirewallTier')]"
         },
         "managementIpConfiguration": {
-          "name": "[parameters('managementPublicIpAddressName')]",
+          "name": "[variables('managementPublicIpAddressName')]",
           "properties": {
             "subnet": {
-              "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallManagementSubnet')]"
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallManagementSubnet')]"
             },
             "publicIPAddress": {
-              "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('managementPublicIpAddressName'))]"
+              "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]"
             }
           }
         },
         "firewallPolicy": {
-          "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+          "id": "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
         }
       }
     },
@@ -219,13 +167,11 @@
     {
       "type": "Microsoft.Network/publicIpAddresses",
       "apiVersion": "2020-08-01",
-      "name": "[parameters('managementPublicIpAddressName')]",
+      "name": "[variables('managementPublicIpAddressName')]",
       "location": "[variables('location')]",
-      "tags": {},
       "sku": {
         "name": "Standard"
       },
-      "zones": "[parameters('managementPublicIpZones')]",
       "properties": {
         "publicIPAllocationMethod": "Static"
       }
@@ -235,11 +181,9 @@
       "apiVersion": "2020-08-01",
       "name": "[parameters('publicIpAddressName')]",
       "location": "[variables('location')]",
-      "tags": {},
       "sku": {
         "name": "Standard"
       },
-      "zones": "[parameters('publicIpZones')]",
       "properties": {
         "publicIPAllocationMethod": "Static"
       }
@@ -247,20 +191,20 @@
     {
       "type": "Microsoft.Network/dnsZones",
       "apiVersion": "2018-05-01",
-      "name": "[parameters('dnsZonesName')]",
-      "location": "[variables('location')]"
+      "name": "[variables('dnsZonesName')]",
+      "location": "global"
     },
     {
       "apiVersion": "2018-11-01",
-      "name": "[parameters('webappname')]",
+      "name": "[variables('webappname')]",
       "type": "Microsoft.Web/sites",
       "location": "[variables('location')]",
       "dependsOn": [
         "microsoft.insights/components/Senecawebapp",
-        "[concat('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+        "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]"
       ],
       "properties": {
-        "name": "[parameters('webappname')]",
+        "name": "[variables('webappname')]",
         "siteConfig": {
           "appSettings": [
             {
@@ -283,15 +227,15 @@
           "metadata": [
             {
               "name": "CURRENT_STACK",
-              "value": "[parameters('currentStack')]"
+              "value": "[variables('currentStack')]"
             }
           ],
-          "phpVersion": "[parameters('phpVersion')]",
-          "netFrameworkVersion": "[parameters('netFrameworkVersion')]",
-          "alwaysOn": "[parameters('alwaysOn')]",
-          "ftpsState": "[parameters('ftpsState')]"
+          "phpVersion": "OFF",
+          "netFrameworkVersion": "v7.0",
+          "alwaysOn": "true",
+          "ftpsState": "FtpsOnly"
         },
-        "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+        "serverFarmId": "[concat('/subscriptions/', variables('azureSubscriptionID'),'/resourcegroups/', variables('rgname'), '/providers/Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
         "clientAffinityEnabled": true,
         "virtualNetworkSubnetId": null,
         "httpsOnly": true
