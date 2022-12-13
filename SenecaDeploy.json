@@ -17,8 +17,8 @@
   },
   "variables": {
     "addressPrefix": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/24')]",
-    "addressPrefix2": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/16')]",
-    "addressPrefix3": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/20')]",
+    "addressPrefix2": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/20')]",
+    "addressPrefix3": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/16')]",
     "azureSubscriptionID": "[subscription().subscriptionId]",
     "azureTenantID": "[subscription().tenantId]",
     "Bastionvnetname": "Bastion-Vnet",
