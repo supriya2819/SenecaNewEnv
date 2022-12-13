@@ -1,0 +1,318 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "DeploymentID": {
+      "type": "String"
+    },
+    "part1": {
+      "type": "String"
+    },
+    "part2": {
+      "type": "String"
+    },
+    "AzureUserName": {
+      "type": "String"
+    },
+    "AzurePassword": {
+      "type": "Securestring"
+    },
+    "ODLID": {
+      "type": "String"
+    },
+    "dnsZonesName": {
+      "type": "String"
+    },
+    "azureFirewallName": {
+      "type": "string",
+      "defaultvalue": "SenecaFW"
+    },
+    "resourceGroup": {
+      "type": "String"
+    },
+    "managementPublicIpAddressName": {
+      "type": "String",
+      "defaultvalue": "MgmtIP"
+    },
+    "publicIpAddressName": {
+      "type": "String",
+      "defaultvalue": "PIP"
+    },
+    "zones": {
+      "type": "Array"
+    },
+    "azureFirewallTier": {
+      "type": "String",
+      "defaultvalue": "Basic"
+    },
+    "managementPublicIpZones": {
+      "type": "Array"
+    },
+    "publicIpZones": {
+      "type": "Array",
+      "defaultvalue": "Basic"
+    },
+    "webappname": {
+      "type": "string",
+      "defaultvalue": "Senecawebapp"
+    },
+    "currentStack": {
+      "type": "string"
+    },
+    "phpVersion": {
+      "type": "string",
+      "defaultvalue": "5.1"
+    },
+    "netFrameworkVersion": {
+      "type": "string",
+      "defaultvalue": "7.1"
+    },
+    "ftpsState": {
+      "type": "string"
+    },
+    "alwaysOn": {
+      "type": "bool",
+      "defaultvalue": "false"
+    },
+    "serverFarmResourceGroup": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "addressPrefix": "[concat('10.',parameters('part1'), '.', parameters('part2') ,'.0/24')]",
+    "azureSubscriptionID": "[subscription().subscriptionId]",
+    "azureTenantID": "[subscription().tenantId]",
+    "Bastionvnetname": "Bastion-Vnet",
+    "location": "[resourceGroup().location]",
+    "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
+    "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
+    "bastionrgname": "Bastion_RG",
+    "virtualNetwork_Student_Vnet_name": "[concat('Student-',parameters('DeploymentID'),'-vnet')]",
+    "virtualNetworks_Bastion_vnet_externalid": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('bastionrgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('Bastionvnetname'))]",
+    "vnetId": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('rgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('virtualNetwork_Student_Vnet_name')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "Virtual-Desktop-Client",
+            "properties": {
+              "addressPrefix": "[variables('addressPrefix')]",
+              "delegations": [],
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "AzureFirewallSubnet",
+            "properties": {
+              "addressPrefix": "[variables('addressPrefix')]"
+            }
+          },
+          {
+            "name": "AzureFirewallManagementSubnet",
+            "properties": {
+              "addressPrefix": "[variables('addressPrefix')]"
+            }
+          }
+        ],
+        "virtualNetworkPeerings": [],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/firewallPolicies",
+      "apiVersion": "2020-11-01",
+      "name": "Seneca-pol",
+      "location": "[variables('location')]",
+      "tags": {},
+      "properties": {
+        "sku": {
+          "tier": "Basic"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/azureFirewalls",
+      "apiVersion": "2020-05-01",
+      "name": "[parameters('azureFirewallName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('managementPublicIpAddressName'))]",
+        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('publicIpAddressName'))]",
+        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks', variables('Bastionvnetname'))]",
+        "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+      ],
+      "zones": "[parameters('zones')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[parameters('publicIpAddressName')]",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallSubnet')]"
+              },
+              "publicIpAddress": {
+                "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]"
+              }
+            }
+          }
+        ],
+        "sku": {
+          "tier": "[parameters('azureFirewallTier')]"
+        },
+        "managementIpConfiguration": {
+          "name": "[parameters('managementPublicIpAddressName')]",
+          "properties": {
+            "subnet": {
+              "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('Bastionvnetname'), 'AzureFirewallManagementSubnet')]"
+            },
+            "publicIPAddress": {
+              "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/publicIpAddresses', parameters('managementPublicIpAddressName'))]"
+            }
+          }
+        },
+        "firewallPolicy": {
+          "id": "[resourceId(parameters('resourceGroup'), 'Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2020-11-01",
+      "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Virtual-Desktop-Client')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]"
+      ],
+      "properties": {
+        "addressPrefix": "[variables('addressPrefix')]",
+        "delegations": [],
+        "privateEndpointNetworkPolicies": "Enabled",
+        "privateLinkServiceNetworkPolicies": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2016-03-30",
+      "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Student-Bastion',parameters('DeploymentID'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[variables('virtualNetworks_Bastion_vnet_externalid')]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIpAddresses",
+      "apiVersion": "2020-08-01",
+      "name": "[parameters('managementPublicIpAddressName')]",
+      "location": "[variables('location')]",
+      "tags": {},
+      "sku": {
+        "name": "Standard"
+      },
+      "zones": "[parameters('managementPublicIpZones')]",
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIpAddresses",
+      "apiVersion": "2020-08-01",
+      "name": "[parameters('publicIpAddressName')]",
+      "location": "[variables('location')]",
+      "tags": {},
+      "sku": {
+        "name": "Standard"
+      },
+      "zones": "[parameters('publicIpZones')]",
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/dnsZones",
+      "apiVersion": "2018-05-01",
+      "name": "[parameters('dnsZonesName')]",
+      "location": "[variables('location')]"
+    },
+    {
+      "apiVersion": "2018-11-01",
+      "name": "[parameters('webappname')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "microsoft.insights/components/Senecawebapp",
+        "[concat('Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]"
+      ],
+      "properties": {
+        "name": "[parameters('webappname')]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference('microsoft.insights/components/Senecawebapp', '2015-05-01').InstrumentationKey]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[reference('microsoft.insights/components/Senecawebapp', '2015-05-01').ConnectionString]"
+            },
+            {
+              "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+              "value": "~2"
+            },
+            {
+              "name": "XDT_MicrosoftApplicationInsights_Mode",
+              "value": "default"
+            }
+          ],
+          "metadata": [
+            {
+              "name": "CURRENT_STACK",
+              "value": "[parameters('currentStack')]"
+            }
+          ],
+          "phpVersion": "[parameters('phpVersion')]",
+          "netFrameworkVersion": "[parameters('netFrameworkVersion')]",
+          "alwaysOn": "[parameters('alwaysOn')]",
+          "ftpsState": "[parameters('ftpsState')]"
+        },
+        "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('serverFarmResourceGroup'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+        "clientAffinityEnabled": true,
+        "virtualNetworkSubnetId": null,
+        "httpsOnly": true
+      }
+    }
+  ],
+  "outputs": {
+    "DeploymentID": {
+      "type": "String",
+      "value": "[ parameters('DeploymentID')]"
+    },
+    "Student Virtual Network": {
+      "type": "String",
+      "value": "[variables('virtualNetwork_Student_Vnet_name')]"
+    },
+    "Student VNET address space": {
+      "type": "String",
+      "value": "[variables('addressPrefix')]"
+    }
+  }
+}
