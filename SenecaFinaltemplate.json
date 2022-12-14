@@ -1,0 +1,235 @@
+{
+  "$schema": https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#,
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "DeploymentID": {
+      "type": "String"
+    },
+    "part1": {
+      "type": "String"
+    },
+    "dnsZonesName": {
+      "type": "String"
+    }
+  },
+  "variables": {
+    "addressPrefix": "[concat('10.',parameters('part1'), '.0.0/16')]",
+    "subnetAddressPrefix1": "[concat('10.',parameters('part1'), '.0.0/24')]",
+    "subnetAddressPrefix2": "[concat('10.',parameters('part1'), '.1.0/24')]",
+    "subnetAddressPrefix3": "[concat('10.',parameters('part1'), '.2.0/24')]",
+    "azureSubscriptionID": "[subscription().subscriptionId]",
+    "azureTenantID": "[subscription().tenantId]",
+    "Bastionvnetname": "Bastion-Vnet",
+    "azureFirewallTier": "Basic",
+    "azureFirewallName": "Senecafw",
+    "publicIpAddressName": "Senecafw_IPConf",
+    "managementPublicIpAddressName": "mgmt-ip",
+    "location": "[resourceGroup().location]",
+    "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
+    "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
+    "bastionrgname": "Bastion_RG",
+    "currentStack": "dotnet",
+    "hostingPlanName": "[concat('hostingplan', parameters('deploymentId'))]",
+    "webappname": "[concat('webApp-', parameters('deploymentId'))]",
+    "virtualNetwork_Student_Vnet_name": "[concat('Student-',parameters('DeploymentID'),'-vnet')]",
+    "virtualNetworks_Bastion_vnet_externalid": "[concat('/subscriptions/', variables('azureSubscriptionID'), '/resourcegroups/', variables('bastionrgname'),'/providers/Microsoft.Network/virtualNetworks/',variables('Bastionvnetname'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2020-11-01",
+      "name": "[variables('virtualNetwork_Student_Vnet_name')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('addressPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "Virtual-Desktop-Client",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix1')]",
+              "privateEndpointNetworkPolicies": "Enabled",
+              "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+          },
+          {
+            "name": "AzureFirewallSubnet",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix2')]"
+            }
+          },
+          {
+            "name": "AzureFirewallManagementSubnet",
+            "properties": {
+              "addressPrefix": "[variables('subnetAddressPrefix3')]"
+            }
+          }
+        ],
+        "enableDdosProtection": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/firewallPolicies",
+      "apiVersion": "2020-11-01",
+      "name": "Seneca-policy",
+      "location": "[variables('location')]",
+      "properties": {
+        "sku": {
+          "tier": "Basic"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/azureFirewalls",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('azureFirewallName')]",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]",
+        "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]",
+        "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[variables('publicIpAddressName')]",
+            "properties": {
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork_Student_Vnet_name'), 'AzureFirewallSubnet')]"
+              }
+            }
+          }
+        ],
+        "sku": {
+          "tier": "[variables('azureFirewallTier')]"
+        },
+        "managementIpConfiguration": {
+          "name": "[variables('managementPublicIpAddressName')]",
+          "properties": {
+            "subnet": {
+              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork_Student_Vnet_name'), 'AzureFirewallManagementSubnet')]"
+            },
+            "publicIPAddress": {
+              "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]"
+            }
+          }
+        },
+        "firewallPolicy": {
+          "id": "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2017-06-01",
+      "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Student-Bastion',parameters('DeploymentID'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]"
+      ],
+      "properties": {
+        "peeringState": "Connected",
+        "remoteVirtualNetwork": {
+          "id": "[variables('virtualNetworks_Bastion_vnet_externalid')]"
+        },
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIpAddresses",
+      "apiVersion": "2020-08-01",
+      "name": "[variables('managementPublicIpAddressName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIpAddresses",
+      "apiVersion": "2020-08-01",
+      "name": "[variables('publicIpAddressName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/dnsZones",
+      "apiVersion": "2018-05-01",
+      "name": "[parameters('dnsZonesName')]",
+      "location": "global",
+      "properties": { }
+    },
+    {
+      "apiVersion": "2018-11-01",
+      "name": "[variables('webappname')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[variables('location')]",
+      "dependsOn": [
+        "[concat('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]"
+      ],
+      "properties": {
+        "name": "[variables('webappname')]",
+        "siteConfig": {
+          "metadata": [
+            {
+              "name": "CURRENT_STACK",
+              "value": "[variables('currentStack')]"
+            }
+          ],
+          "phpVersion": "OFF",
+          "netFrameworkVersion": "v7.0",
+          "alwaysOn": true,
+          "ftpsState": "FtpsOnly"
+        },
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+        "clientAffinityEnabled": true,
+        "virtualNetworkSubnetId": null,
+        "httpsOnly": true
+      }
+    },
+    {
+      "apiVersion": "2020-06-01",
+      "name": "[variables('hostingPlanName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[variables('location')]",
+      "properties": {
+          "name": "[variables('hostingPlanName')]"
+      },
+      "sku": {
+          "Name": "S1"
+      }
+    }
+  ],
+  "outputs": {
+    "DeploymentID": {
+      "type": "String",
+      "value": "[ parameters('DeploymentID')]"
+    },
+    "Student Virtual Network": {
+      "type": "String",
+      "value": "[variables('virtualNetwork_Student_Vnet_name')]"
+    },
+    "Student VNET address space": {
+      "type": "String",
+      "value": "[variables('addressPrefix')]",
+    "Web App URL": {
+      "type": "string",
+      "value": "[concat('https://',variables(' webAppName'),'.azurewebsites.net')]"
+    },
+
+    }
+  }
+}
