@@ -8,7 +8,7 @@
     "part1": {
       "value": "GEN-UNIQUEID-BY-INDEX"
     },
-    "dnsZonesName": {
+    "dnsZoneName": {
       "value": "GET-ODL-ID"
     }
 }
