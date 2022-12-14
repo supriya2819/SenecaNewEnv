@@ -1,5 +1,5 @@
 {
-  "$schema": https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#,
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "DeploymentID": {
@@ -8,7 +8,7 @@
     "part1": {
       "type": "String"
     },
-    "dnsZonesName": {
+    "dnsZoneName": {
       "type": "String"
     }
   },
@@ -22,6 +22,7 @@
     "Bastionvnetname": "Bastion-Vnet",
     "azureFirewallTier": "Basic",
     "azureFirewallName": "Senecafw",
+    "dnsZonesName": "[concat(parameters('dnsZoneName'),parameters('DeploymentID'),'.com')]",
     "publicIpAddressName": "Senecafw_IPConf",
     "managementPublicIpAddressName": "mgmt-ip",
     "location": "[resourceGroup().location]",
@@ -168,9 +169,9 @@
     {
       "type": "Microsoft.Network/dnsZones",
       "apiVersion": "2018-05-01",
-      "name": "[parameters('dnsZonesName')]",
+      "name": "[variables('dnsZonesName')]",
       "location": "global",
-      "properties": { }
+      "properties": {}
     },
     {
       "apiVersion": "2018-11-01",
@@ -206,10 +207,10 @@
       "type": "Microsoft.Web/serverfarms",
       "location": "[variables('location')]",
       "properties": {
-          "name": "[variables('hostingPlanName')]"
+        "name": "[variables('hostingPlanName')]"
       },
       "sku": {
-          "Name": "S1"
+        "Name": "S1"
       }
     }
   ],
@@ -224,12 +225,11 @@
     },
     "Student VNET address space": {
       "type": "String",
-      "value": "[variables('addressPrefix')]",
+      "value": "[variables('addressPrefix')]"
+    },
     "Web App URL": {
       "type": "string",
-      "value": "[concat('https://',variables(' webAppName'),'.azurewebsites.net')]"
-    },
-
+      "value": "[concat('https://',variables('webAppName'),'.azurewebsites.net')]"
     }
   }
-}
+} 
