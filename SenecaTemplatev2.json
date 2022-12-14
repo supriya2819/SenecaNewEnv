@@ -20,8 +20,6 @@
     "azureSubscriptionID": "[subscription().subscriptionId]",
     "azureTenantID": "[subscription().tenantId]",
     "Bastionvnetname": "Bastion-Vnet",
-    "azureFirewallTier": "Basic",
-    "azureFirewallName": "Senecafw",
     "dnsZonesName": "[concat(parameters('DNSPrefix'),parameters('DeploymentID'),'.com')]",
     "publicIpAddressName": "[concat('Senecafw', parameters('DeploymentId'))]",
     "managementPublicIpAddressName": "[concat('mgmtip', parameters('DeploymentId'))]",
@@ -73,58 +71,6 @@
       }
     },
     {
-      "type": "Microsoft.Network/firewallPolicies",
-      "apiVersion": "2020-11-01",
-      "name": "Seneca-policy",
-      "location": "[variables('location')]",
-      "properties": {
-        "sku": {
-          "tier": "Basic"
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Network/azureFirewalls",
-      "apiVersion": "2020-05-01",
-      "name": "[variables('azureFirewallName')]",
-      "location": "[variables('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]",
-        "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_Student_Vnet_name'))]",
-        "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
-      ],
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "[variables('publicIpAddressName')]",
-            "properties": {
-              "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork_Student_Vnet_name'), 'AzureFirewallSubnet')]"
-              }
-            }
-          }
-        ],
-        "sku": {
-          "tier": "[variables('azureFirewallTier')]"
-        },
-        "managementIpConfiguration": {
-          "name": "[variables('managementPublicIpAddressName')]",
-          "properties": {
-            "subnet": {
-              "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork_Student_Vnet_name'), 'AzureFirewallManagementSubnet')]"
-            },
-            "publicIPAddress": {
-              "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('managementPublicIpAddressName'))]"
-            }
-          }
-        },
-        "firewallPolicy": {
-          "id": "[resourceId('Microsoft.Network/firewallPolicies', 'Seneca-policy')]"
-        }
-      }
-    },
-    {
       "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
       "apiVersion": "2017-06-01",
       "name": "[concat(variables('virtualNetwork_Student_Vnet_name'), '/Student-Bastion',parameters('DeploymentID'))]",
@@ -140,30 +86,6 @@
         "allowForwardedTraffic": true,
         "allowGatewayTransit": false,
         "useRemoteGateways": false
-      }
-    },
-    {
-      "type": "Microsoft.Network/publicIpAddresses",
-      "apiVersion": "2020-08-01",
-      "name": "[variables('managementPublicIpAddressName')]",
-      "location": "[variables('location')]",
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Static"
-      }
-    },
-    {
-      "type": "Microsoft.Network/publicIpAddresses",
-      "apiVersion": "2020-08-01",
-      "name": "[variables('publicIpAddressName')]",
-      "location": "[variables('location')]",
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Static"
       }
     },
     {
