@@ -8,12 +8,12 @@
     "part1": {
       "type": "String"
     },
-    "dnsZoneName": {
+    "DNSPrefix": {
       "type": "String"
     }
   },
   "variables": {
-    "addressPrefix": "[concat('10.',parameters('part1'), '.0.0/16')]",
+    "addressPrefix": "[concat('10.',parameters('part1'), '.0.0/17')]",
     "subnetAddressPrefix1": "[concat('10.',parameters('part1'), '.0.0/24')]",
     "subnetAddressPrefix2": "[concat('10.',parameters('part1'), '.1.0/24')]",
     "subnetAddressPrefix3": "[concat('10.',parameters('part1'), '.2.0/24')]",
@@ -22,9 +22,9 @@
     "Bastionvnetname": "Bastion-Vnet",
     "azureFirewallTier": "Basic",
     "azureFirewallName": "Senecafw",
-    "dnsZonesName": "[concat(parameters('dnsZoneName'),parameters('DeploymentID'),'.com')]",
-    "publicIpAddressName": "Senecafw_IPConf",
-    "managementPublicIpAddressName": "mgmt-ip",
+    "dnsZonesName": "[concat(parameters('DNSPrefix'),parameters('DeploymentID'),'.com')]",
+    "publicIpAddressName": "[concat('Senecafw', parameters('DeploymentId'))]",
+    "managementPublicIpAddressName": "[concat('mgmtip', parameters('DeploymentId'))]",
     "location": "[resourceGroup().location]",
     "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
     "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
