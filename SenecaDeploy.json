@@ -8,7 +8,7 @@
     "part1": {
       "type": "String"
     },
-    "dnsZoneName": {
+    "DNSPrefix": {
       "type": "String"
     }
   },
@@ -22,9 +22,9 @@
     "Bastionvnetname": "Bastion-Vnet",
     "azureFirewallTier": "Basic",
     "azureFirewallName": "Senecafw",
-    "dnsZonesName": "[concat(parameters('dnsZoneName'),parameters('DeploymentID'),'.com')]",
-    "publicIpAddressName": "Senecafw_IPConf",
-    "managementPublicIpAddressName": "mgmt-ip",
+    "dnsZonesName": "[concat(parameters('DNSPrefix'),parameters('DeploymentID'),'.com')]",
+    "publicIpAddressName": "[concat('Senecafw', parameters('DeploymentId'))]"
+    "managementPublicIpAddressName": "[concat('mgmtip', parameters('DeploymentId'))],
     "location": "[resourceGroup().location]",
     "Ref": "[resourceId('Microsoft.Network/virtualNetworks/',variables('virtualNetwork_Student_Vnet_name'))]",
     "rgname": "[concat('Student-','RG-',parameters('DeploymentID'))]",
