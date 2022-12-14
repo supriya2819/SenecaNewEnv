@@ -9,7 +9,7 @@
       "value": "GEN-UNIQUEID-BY-INDEX"
     },
     "DNSPrefix": {
-      "value": "GenerateRandomUniqueString"
+      "value": "RandomAlphaNumericString"
     }
 }
 }
