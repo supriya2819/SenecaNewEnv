@@ -8,7 +8,7 @@
     },
     "variables": {
       "location": "[resourceGroup().location]",
-      "iotHubName": "[concat('BDA850', parameters('DeploymentId'))]",
+      "iotHubName": "[concat('BDA', parameters('DeploymentId'))]",
       "skuName": "S1",
       "skuUnits": 1,
       "d2cPartitions": 4
