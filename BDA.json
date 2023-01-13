@@ -8,10 +8,9 @@
     },
     "variables": {
         "location": "[resourceGroup().location]",
-        "iotHubName": "[concat('BDA850',parameters('DeploymentId'))]",
+        "iotHubName": "[concat('senecahub',parameters('DeploymentId'))]",
         "skuName": "S1",
-        "skuUnits": 1,
-        "d2cPartitions": 4
+        "skuUnits": 1
     },
     "resources": [
         {
@@ -24,35 +23,7 @@
                 "capacity": "[variables('skuUnits')]"
             },
             "properties": {
-                "eventHubEndpoints": {
-                    "events": {
-                        "retentionTimeInDays": 1,
-                        "partitionCount": "[variables('d2cPartitions')]"
-                    }
-                },
-                "messagingEndpoints": {
-                    "fileNotifications": {
-                        "FeedbackRetentionTime": "PT1M",
-                        "TTLDuration": "PT1M",
-                        "maxDeliveryCount": 10
-                    }
-                },
-                "cloudToDevice": {
-                    "maxDeliveryCount": 10,
-                    "defaultTtl": "PT1H",
-                    "feedback": {
-                        "lockDuration": "PT1M",
-                        "ttl": "PT1H",
-                        "maxDeliveryCount": 10
-                    }
-                }
             }
         }
-    ],
-    "outputs": {
-        "DeploymentID": {
-            "type": "String",
-            "value": "[ parameters('DeploymentID')]"
-        }
-    }
+    ]
 }
